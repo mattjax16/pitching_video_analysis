@@ -101,57 +101,75 @@ def write_csv_clips_to_npy(data_dir_names):
             print(f'Error {dir_name} has not been collected')
             raise ValueError
 
-    # # make new folder
-    # try:
-    #     os.mkdir(f'data/{pitcher_name}_{session_number}_npy')
-    # except OSError as error:
-    #     print(error)
-    #
-    # # write csv files
-    # if use_webcam1:
-    #     for clip in list_of_wc1_clips:
-    #         np.save(f'data/{pitcher_name}_{session_number}/{clip[0]}.npy', clip[1:])
-    #
-    # if use_webcam2:
-    #     for clip in list_of_wc2_clips:
-    #         np.save(f'data/{pitcher_name}_{session_number}/{clip[0]}.npy', clip[1:])
-    #
-    # if use_oculus1:
-    #     for clip in list_of_oc1_clips:
-    #         np.save(f'data/{pitcher_name}_{session_number}/{clip[0]}.npy', clip[1:])
-    # if use_oculus2:
-    #     for clip in list_of_oc2_clips:
-    #         np.save(f'data/{pitcher_name}_{session_number}/{clip[0]}.npy', clip[1:])
+        # loop through each session (dir)
+    for dir_name in data_dir_names:
+        print(dir_name)
+
+
+
+        #make a directory for the numy files
+
+        npy_dir_name = f'data/{dir_name}_npy'
+        try:
+            os.mkdir(npy_dir_name)
+        except OSError as error:
+            print(error)
+
+        #get the file path of every file in the original session directory
+        files_in_dir = [f'data/{dir_name}/{file}' for file in os.listdir(f'data/{dir_name}')]
+
+        #loop through every file in the dir
+        for file_path in files_in_dir:
+
+            #load in the csv to a numpy array
+            csv_array = np.genfromtxt(file_path, delimiter=',')
+
+            npy_file_name = file_path.split('/')[-1]
+            npy_file_name = npy_dir_name + '/' + npy_file_name.split('.')[0] + '.npy'
+
+            #save the file to the new directory
+            np.save(npy_file_name,csv_array)
+
 
     print(f'Done with write clips to npy method')
 
 
 
 def concurrent_load_data(data_path,img_width = 480, img_height = 640,crop_the_frames = True,
-                    top_left_corner=(100,30),bottom_right_corner=(450,420)):
+                    top_left_corner=(100,30),bottom_right_corner=(450,420), data_type = 'float32'):
 
 
-    #load in the clip
-    clip_df = pd.read_csv(data_path)
+    #load in the clip for proper data type
+    if data_path.split('.')[-1] == 'csv':
+        frames_matrix = np.genfromtxt(data_path, delimiter=',')
+    elif data_path.split('.')[-1] == 'npy':
+        frames_matrix = np.load(data_path)
+    else:
+        print(f'Error data file must be a csv or npy file!!!\nCurrently it is {data_path.split(".")[-1]}')
 
-    frames_matrix = clip_df.values
+
+    #set data type of frame matrix
+    frames_matrix = frames_matrix.astype(data_type)
+
 
     #crop the clip if needed
     if crop_the_frames:
 
-        #unflatten the frames matrix
-        frames_matrix = unflatten_images(frames_matrix,img_width,img_height)
+        #unflatten the frames matrix if needed
+        if frames_matrix.ndim == 2:
+            frames_matrix = unflatten_images(frames_matrix,img_width,img_height)
 
-        cropped_frames_matrix = crop_frames(frames_matrix, top_left_corner=top_left_corner
+        frames_matrix = crop_frames(frames_matrix, top_left_corner=top_left_corner
                                         ,bottom_right_corner=bottom_right_corner)
 
-        cropped_frames_matrix = cropped_frames_matrix.reshape(cropped_frames_matrix.shape[0],
-                                                              cropped_frames_matrix.shape[1]*cropped_frames_matrix.shape[2])
-
-        clip_df = pd.DataFrame(cropped_frames_matrix)
+        frames_matrix = frames_matrix.reshape(frames_matrix.shape[0],
+                                                              frames_matrix.shape[1]*frames_matrix.shape[2])
 
 
+    clip_df = pd.DataFrame(frames_matrix)
 
+    #set the name of each column to pixels
+    clip_df.columns = [f'pixel_{col}' for col in clip_df.columns]
 
 
     # Setting up labeling for each clip in the dataframe
@@ -214,8 +232,16 @@ def load_clips_to_df(data_dir_names,img_width = 480, img_height = 640,crop_the_f
 The main function used to test functions from this python script
 '''
 def main():
-   test_clips_df = load_clips_to_df(['will_t_0'])
-   print(f'Done with creating_ptiching_dataframes.py')
+
+   # t_load = concurrent_load_data('data/will_t_0_npy/will_t_0_changeup_4_Wc1.npy')
+
+   test_clips_df = load_clips_to_df(['will_t_0_npy'])
+
+   #write_csv_clips_to_npy(['will_t_1','will_t_2','will_t_3'])
+
+   t_c = pd.concat(test_clips_df)
+
+   print(f'Done with creating_pitching_dataframes.py')
 
 
 if __name__ == "__main__":

@@ -23,7 +23,8 @@ import cv2
 import os
 
 
-def capture_video(capture_time = 3, cameras_list = ['webcam1','webcam2','oculus1','oculus2',], greyScale = True):
+def capture_video(capture_time = 3, cameras_list = ['webcam1','webcam2','oculus1','oculus2',], greyScale = True,
+                  flatten_frames = False):
     '''
     This function is used to capture videos from the cameres input into the computer
     may need to go into script and change the video capture objects
@@ -52,8 +53,8 @@ def capture_video(capture_time = 3, cameras_list = ['webcam1','webcam2','oculus1
 
     webcam1_cap = cv2.VideoCapture(4)
     webcam2_cap = cv2.VideoCapture(5)
-    oculus_1_cap = cv2.VideoCapture(2)
-    oculus_2_cap = cv2.VideoCapture(0)
+    oculus_1_cap = cv2.VideoCapture(0)
+    oculus_2_cap = cv2.VideoCapture(2)
 
     # will_pitch_vid_cap = cv2.VideoCapture('data/will_pitching/Changeups /IMG_0132_MOV.mp4')
 
@@ -144,33 +145,43 @@ def capture_video(capture_time = 3, cameras_list = ['webcam1','webcam2','oculus1
             break
 
         #set up data to be put into the list by flattening it and add it to the list
-        if greyScale:
-            if ret_web1 and use_webcam1:
-                flattened_frame_web1 = frame_web1.reshape(webcam1_pixel_count)
-                webcam1_frames_list.append(flattened_frame_web1)
-            if ret_web2 and use_webcam2:
-                flattened_frame_web2 = frame_web2.reshape(webcam2_pixel_count)
-                webcam2_frames_list.append(flattened_frame_web2)
-            if ret_oc1 and use_oculus1:
-                flattened_frame_oc1 = frame_oc1.reshape(oculus_1_pixel_count)
-                oculus_1_frames_list.append(flattened_frame_oc1)
-            if ret_oc2 and use_oculus2:
-                flattened_frame_oc2 = frame_oc2.reshape(oculus_2_pixel_count)
-                oculus_2_frames_list.append(flattened_frame_oc2)
+        if flatten_frames:
+            if greyScale:
+                if ret_web1 and use_webcam1:
+                    flattened_frame_web1 = frame_web1.reshape(webcam1_pixel_count)
+                    webcam1_frames_list.append(flattened_frame_web1)
+                if ret_web2 and use_webcam2:
+                    flattened_frame_web2 = frame_web2.reshape(webcam2_pixel_count)
+                    webcam2_frames_list.append(flattened_frame_web2)
+                if ret_oc1 and use_oculus1:
+                    flattened_frame_oc1 = frame_oc1.reshape(oculus_1_pixel_count)
+                    oculus_1_frames_list.append(flattened_frame_oc1)
+                if ret_oc2 and use_oculus2:
+                    flattened_frame_oc2 = frame_oc2.reshape(oculus_2_pixel_count)
+                    oculus_2_frames_list.append(flattened_frame_oc2)
 
+            else:
+                if ret_web1 and use_webcam1:
+                    flattened_frame_web1 = frame_web1.reshape(webcam1_pixel_count,3)
+                    webcam1_frames_list.append(flattened_frame_web1)
+                if ret_web2 and use_webcam2:
+                    flattened_frame_web2 = frame_web2.reshape(webcam2_pixel_count, 3)
+                    webcam2_frames_list.append(flattened_frame_web2)
+                if ret_oc1 and use_oculus1:
+                    flattened_frame_oc1 = frame_oc1.reshape(oculus_1_pixel_count,3)
+                    oculus_1_frames_list.append(flattened_frame_oc1)
+                if ret_oc2 and use_oculus2:
+                    flattened_frame_oc2 = frame_oc2.reshape(oculus_2_pixel_count,3)
+                    oculus_2_frames_list.append(flattened_frame_oc2)
+
+
+        #else if not flattening frames
         else:
-            if ret_web1 and use_webcam1:
-                flattened_frame_web1 = frame_web1.reshape(webcam1_pixel_count,3)
-                webcam1_frames_list.append(flattened_frame_web1)
-            if ret_web2 and use_webcam2:
-                flattened_frame_web2 = frame_web2.reshape(webcam2_pixel_count, 3)
-                webcam2_frames_list.append(flattened_frame_web2)
-            if ret_oc1 and use_oculus1:
-                flattened_frame_oc1 = frame_oc1.reshape(oculus_1_pixel_count,3)
-                oculus_1_frames_list.append(flattened_frame_oc1)
-            if ret_oc2 and use_oculus2:
-                flattened_frame_oc2 = frame_oc2.reshape(oculus_2_pixel_count,3)
-                oculus_2_frames_list.append(flattened_frame_oc2)
+            # print(1)
+            webcam1_frames_list.append(frame_web1)
+            webcam1_frames_list.append(frame_web1)
+            webcam1_frames_list.append(frame_web1)
+            webcam1_frames_list.append(frame_web1)
 
         # creating matrtix to hold the frames of each camera
         if ret_web1 and use_webcam1:
@@ -181,7 +192,6 @@ def capture_video(capture_time = 3, cameras_list = ['webcam1','webcam2','oculus1
             oculus_1_video_matrix = np.asarray(oculus_1_frames_list)
         if ret_oc2 and use_oculus2:
             oculus_2_video_matrix = np.asarray(oculus_2_frames_list)
-
         #increment frame count variable
         fc += 1
 
@@ -221,7 +231,7 @@ def capture_video(capture_time = 3, cameras_list = ['webcam1','webcam2','oculus1
 
 def pitch_capture(player_name,session_number,capture_time = 3,number_of_pitches = 2,
                   pitchers_pitch_types = ['fastball','changeup', 'slider'],cameras_list = ['webcam1','webcam2','oculus1','oculus2',],
-                  wait_for_input = True):
+                  wait_for_input = True, random_pitches = True):
     '''
     This Function capture the number of pitches
 
@@ -259,11 +269,11 @@ def pitch_capture(player_name,session_number,capture_time = 3,number_of_pitches 
     pitch_type_list = ['fastball', 'twoSeamFastball', 'sinker', 'changeup', 'slider', 'curveball', 'cutter'
         ,'splitter', 'knuckleball']
 
-    #check that all pitch types are in the list
-    for pitch_type in pitchers_pitch_types:
-        if pitch_type not in pitch_type_list:
-            print(f'Error {pitch_type} must be in pitch types list!!!!\n{pitch_type_list}')
-            raise ValueError
+    # #check that all pitch types are in the list
+    # for pitch_type in pitchers_pitch_types:
+    #     if pitch_type not in pitch_type_list:
+    #         print(f'Error {pitch_type} must be in pitch types list!!!!\n{pitch_type_list}')
+    #         raise ValueError
 
     #make an array to hold the count of each pitch
     pitch_count_array = np.zeros(len(pitchers_pitch_types))
@@ -287,11 +297,14 @@ def pitch_capture(player_name,session_number,capture_time = 3,number_of_pitches 
         if use_oculus2:
             pitch_clips_dictionary['oculus2'] = []
 
+
         pitch_to_throw_num = random.randint(0,len(pitchers_pitch_types)-1)
         pitch_to_throw = pitchers_pitch_types[pitch_to_throw_num]
 
         #add to the pitch count
         pitch_count_array[pitch_to_throw_num] = pitch_count_array[pitch_to_throw_num] + 1
+        #TODO
+        #add ability to just cycle through categories
 
         if wait_for_input:
             confirmation = input(f'\n\n{number_of_pitches-pitch_count} Pitch(s) Left\nThrow: {pitch_to_throw} \nPress any enter to start recording\n.')
@@ -452,18 +465,18 @@ def write_clips_to_npy(list_of_pitch_clips, pitcher_name , session_number,
     # write csv files
     if use_webcam1:
         for clip in list_of_wc1_clips:
-            np.save(f'data/{pitcher_name}_{session_number}/{clip[0]}.npy',clip[1:])
+            np.save(f'data/{pitcher_name}_{session_number}_npy/{clip[0]}.npy',clip[1:])
 
     if use_webcam2:
         for clip in list_of_wc2_clips:
-            np.save(f'data/{pitcher_name}_{session_number}/{clip[0]}.npy', clip[1:])
+            np.save(f'data/{pitcher_name}_{session_number}_npy/{clip[0]}.npy', clip[1:])
 
     if use_oculus1:
         for clip in list_of_oc1_clips:
-            np.save(f'data/{pitcher_name}_{session_number}/{clip[0]}.npy',clip[1:])
+            np.save(f'data/{pitcher_name}_{session_number}_npy/{clip[0]}.npy',clip[1:])
     if use_oculus2:
         for clip in list_of_oc2_clips:
-            np.save(f'data/{pitcher_name}_{session_number}/{clip[0]}.npy',clip[1:])
+            np.save(f'data/{pitcher_name}_{session_number}_npy/{clip[0]}.npy',clip[1:])
 
 
 
@@ -478,13 +491,15 @@ def main():
     #['webcam1','webcam2','oculus1','oculus2']
 
     # pitcher_name = 'will_t'
-    pitcher_name = 'will_t'
-    session_num = 4
-    cameras_list = ['webcam1', 'oculus1']
+    pitcher_name = 'cards_aces'
+    session_num = 0
+    cameras_list = ['webcam1']
+    # cameras_list = ['webcam1','webcam2','oculus1','oculus2']
 
-    test_pitch_cap = pitch_capture(pitcher_name,session_num,capture_time = 10,wait_for_input=True,
-                                   cameras_list=cameras_list, number_of_pitches=48)
-    test_write_csv = write_clips_to_csv(test_pitch_cap,pitcher_name,session_num,cameras_list=cameras_list)
+    test_pitch_cap = pitch_capture(pitcher_name,session_num,capture_time = 5
+                                   ,wait_for_input=True,
+                                   cameras_list=cameras_list, number_of_pitches=10,pitchers_pitch_types=['spades','diamonds','hearts','clubs'])
+    write_clips_to_npy(test_pitch_cap,pitcher_name,session_num,cameras_list=cameras_list)
     print(f'Done Script')
 
 
